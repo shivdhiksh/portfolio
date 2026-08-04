@@ -26,7 +26,7 @@ export default function LoadingScreen() {
         <motion.div
           className="loading-screen"
           exit={{ opacity: 0, scale: 1.05 }}
-          transition={{ duration: 0.6, ease: [0.76, 0, 0.24, 1] }}
+          transition={{ duration: 0.6, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }}
           style={{ background: "var(--bg-primary)", zIndex: 9999 }}
         >
           <div className="flex flex-col items-center gap-8">
@@ -34,7 +34,7 @@ export default function LoadingScreen() {
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
+              transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number] }}
               className="relative"
             >
               <div

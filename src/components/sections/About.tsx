@@ -1,15 +1,15 @@
 "use client";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { Brain, Code2, Lightbulb, Trophy, User } from "lucide-react";
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" as const } },
 };
 
-const stagger = {
+const stagger: Variants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.1 } },
 };
@@ -140,14 +140,14 @@ export default function About() {
               </div>
 
               <p style={{ color: "var(--text-secondary)", lineHeight: 1.9, fontSize: "0.95rem" }}>
-                I&apos;m a passionate developer specializing in Artificial Intelligence and Full Stack Development. 
-                My journey started with a deep curiosity about how machines learn, which quickly evolved into 
+                I&apos;m a passionate developer specializing in Artificial Intelligence and Full Stack Development.
+                My journey started with a deep curiosity about how machines learn, which quickly evolved into
                 building production-grade AI applications and scalable web platforms.
               </p>
 
               <p style={{ color: "var(--text-secondary)", lineHeight: 1.9, fontSize: "0.95rem" }}>
-                I thrive in environments that challenge me — hackathons, competitive programming, and shipping products 
-                that make a real impact. I believe technology should be both powerful and accessible, and I build with 
+                I thrive in environments that challenge me — hackathons, competitive programming, and shipping products
+                that make a real impact. I believe technology should be both powerful and accessible, and I build with
                 that philosophy in mind.
               </p>
 
@@ -235,7 +235,7 @@ export default function About() {
         </motion.div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .grid-about {
           grid-template-columns: 1fr 1fr;
         }

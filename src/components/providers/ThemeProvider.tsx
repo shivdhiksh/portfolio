@@ -14,16 +14,20 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>(() => {
+    // Lazy initializer: runs only once on the client; safe to skip during SSR
+    if (typeof window === "undefined") return "dark";
+    const stored = localStorage.getItem("portfolio-theme") as Theme | null;
+    const preferred = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    return stored ?? preferred;
+  });
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("portfolio-theme") as Theme | null;
-    const preferred = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-    const initial = stored ?? preferred;
-    setTheme(initial);
-    applyTheme(initial);
+    applyTheme(theme);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function applyTheme(t: Theme) {

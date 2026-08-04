@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { skillCategories } from "@/data/skills";
 import { Code2, Globe, Database, Brain, Wrench } from "lucide-react";
@@ -9,12 +9,12 @@ const iconMap: Record<string, React.ElementType> = {
   Code2, Globe, Database, Brain, Wrench,
 };
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 40 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.6, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
   }),
 };
 
@@ -159,7 +159,7 @@ export default function Skills() {
                     className="progress-fill"
                     initial={{ width: 0 }}
                     animate={{ width: `${skill.level}%` }}
-                    transition={{ duration: 1.2, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: 1.2, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
                   />
                 </div>
               </motion.div>

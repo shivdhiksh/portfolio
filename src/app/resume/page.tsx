@@ -1,11 +1,8 @@
-import type { Metadata } from "next";
+"use client";
+import Link from "next/link";
 import Image from "next/image";
 import "../../app/globals.css";
 
-export const metadata: Metadata = {
-  title: "Resume — Shiva Dhikshith Koppu",
-  description: "Resume of Shiva Dhikshith Koppu — AI Developer, Full Stack Developer, CS (Data Science) student at KPRIT.",
-};
 
 export default function ResumePage() {
   return (
@@ -349,9 +346,9 @@ export default function ResumePage() {
       <div className="page-wrapper">
         {/* Action Bar */}
         <div className="action-bar">
-          <a href="/" className="btn btn-outline">
+          <Link href="/" className="btn btn-outline">
             ← Back to Portfolio
-          </a>
+          </Link>
           <button className="btn btn-blue" onClick={() => window.print()}>
             ⬇ Download / Print PDF
           </button>

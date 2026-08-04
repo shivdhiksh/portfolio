@@ -51,9 +51,6 @@ export default function Achievements() {
         >
           {achievements.map((ach, i) => {
             const Icon = iconMap[ach.icon] ?? Trophy;
-            const [start, end] = ach.color.split(" ").filter((c) => c.startsWith("#") || c.startsWith("var"));
-            const gradientStart = start?.replace("from-", "") || "#3b82f6";
-            const gradientEnd = end?.replace("to-", "") || "#8b5cf6";
 
             // Extract actual colors
             const colorMap: Record<string, [string, string]> = {

@@ -21,7 +21,6 @@ import Blog from "@/components/sections/Blog";
 
 function MouseSpotlight() {
   useEffect(() => {
-    const overlay = document.getElementById("spotlight-overlay");
     const handleMove = (e: MouseEvent) => {
       document.documentElement.style.setProperty("--mouse-x", `${e.clientX}px`);
       document.documentElement.style.setProperty("--mouse-y", `${e.clientY}px`);
