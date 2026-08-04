@@ -364,7 +364,7 @@ export default function ResumePage() {
               </div>
             </div>
             <h1>SHIVA DHIKSHITH KOPPU</h1>
-            <p className="role">AI Developer · Full Stack Developer · CS (Data Science)</p>
+            <p className="role">AI Developer · Full Stack Developer · CSE (Data Science)</p>
             <div className="contact-row">
               <span className="contact-item">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.6 19.79 19.79 0 0 1 1.61 5a2 2 0 0 1 1.95-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.91a16 16 0 0 0 6 6l1.27-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -448,6 +448,15 @@ export default function ResumePage() {
                   <li>Built an AI-powered career mentoring platform during a hackathon in a 2-member team.</li>
                   <li>Developed modules for AI mock interviews, personalized roadmaps, resume ATS analysis, and career guidance.</li>
                   <li>Containerized the application using Docker and optimized background processing with Celery.</li>
+                </ul>
+              </div>
+
+              <div className="project-item">
+                <div className="project-title">Spidy – AI Desktop Assistant (Personal Project)</div>
+                <div className="project-tech">Python · Ollama (Llama 3.2) · AsyncIO · ChromaDB · SQLite · Git</div>
+                <ul className="project-bullets">
+                  <li>Designed and developed a modular AI desktop assistant capable of understanding natural language commands and automating desktop and browser tasks.</li>
+                  <li>Built desktop automation features to launch applications, search files, control browsers, and manage system operations through intelligent skills.</li>
                 </ul>
               </div>
 
