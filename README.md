@@ -4,7 +4,7 @@ A modern, responsive personal portfolio built with **Next.js**, **TypeScript**, 
 
 ## 🚀 Live Demo
 
-🔗 https://your-portfolio.vercel.app
+🔗 https://portfolio-fawn-six-24.vercel.app/
 
 *(Replace this with your Vercel URL after deployment.)*
 
@@ -59,8 +59,8 @@ npm run dev
 ## 📧 Contact
 
 - GitHub: https://github.com/shivdhiksh
-- LinkedIn: *(Add your LinkedIn URL)*
-- Portfolio: https://your-portfolio.vercel.app
+- LinkedIn: www.linkedin.com/in/shivdhiksh
+- Portfolio: https://portfolio-fawn-six-24.vercel.app/
 
 ---
 
