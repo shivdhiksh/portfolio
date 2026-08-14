@@ -6,13 +6,12 @@ A modern, responsive personal portfolio built with **Next.js**, **TypeScript**, 
 
 🔗 https://portfolio-fawn-six-24.vercel.app/
 
-*(Replace this with your Vercel URL after deployment.)*
 
 ---
 
 ## 👨‍💻 About Me
 
-I'm **Shiva Dhikshith Koppu**, an AI & Machine Learning student passionate about building intelligent applications, full-stack web solutions, and innovative software.
+I'm **Shiva Dhikshith Koppu**,  CSE Data Science student 
 
 ---
 
@@ -36,12 +35,6 @@ I'm **Shiva Dhikshith Koppu**, an AI & Machine Learning student passionate about
 - Tailwind CSS
 - Framer Motion
 - Lucide React
-
----
-
-## 📸 Screenshots
-
-*(Add screenshots of your portfolio here later.)*
 
 ---
 
