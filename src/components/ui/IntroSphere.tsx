@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 const POINTS = 1400;
 const CORE_POINTS = 150;
 const ASSEMBLE_MS = 1800;
+const BURST_MS = 1100;
 
 interface P {
   tx: number;
@@ -16,9 +17,14 @@ interface P {
 
 const ease = (t: number) => 1 - Math.pow(1 - t, 3);
 
-/** A rotating dot-sphere that assembles from scattered points, with a flickering core cloud. */
-export default function IntroSphere({ size = 400 }: { size?: number }) {
+/** A rotating dot-sphere that assembles from scattered points, with a flickering core cloud. `size` is the drawing resolution; the canvas always fills its parent so it stays concentric with the rings. */
+export default function IntroSphere({ size = 400, burst = false }: { size?: number; burst?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const burstAt = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (burst && burstAt.current === null) burstAt.current = performance.now();
+  }, [burst]);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -55,7 +61,7 @@ export default function IntroSphere({ size = 400 }: { size?: number }) {
       return { x: Math.sin(b) * Math.cos(a) * r, y: Math.sin(b) * Math.sin(a) * r, z: Math.cos(b) * r };
     });
 
-    const R = size * 0.34;
+    const R = size * 0.315;
     const c = size / 2;
     const start = performance.now();
     let raf = 0;
@@ -76,13 +82,17 @@ export default function IntroSphere({ size = 400 }: { size?: number }) {
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       const t = now - start;
+      // 0 until the visitor taps, then 0 to 1 over the spread-away animation
+      const bt = burstAt.current === null ? 0 : Math.min(1, (now - burstAt.current) / BURST_MS);
+      const spread = 1 + bt * bt * 1.8;
+      const fade = 1 - bt;
       const ry = reduce ? 0.6 : t * 0.00032;
       const rx = 0.38;
       ctx.clearRect(0, 0, size, size);
 
       const glow = ctx.createRadialGradient(c, c, 0, c, c, R * 1.1);
-      glow.addColorStop(0, "rgba(34,211,238,0.42)");
-      glow.addColorStop(0.5, "rgba(34,211,238,0.12)");
+      glow.addColorStop(0, `rgba(34,211,238,${0.42 * fade})`);
+      glow.addColorStop(0.5, `rgba(34,211,238,${0.12 * fade})`);
       glow.addColorStop(1, "rgba(34,211,238,0)");
       ctx.fillStyle = glow;
       ctx.fillRect(0, 0, size, size);
@@ -90,14 +100,14 @@ export default function IntroSphere({ size = 400 }: { size?: number }) {
       shell.forEach((p, i) => {
         const k = reduce ? 1 : ease(Math.min(1, Math.max(0, (t - i * 0.5) / ASSEMBLE_MS)));
         const q = project(
-          p.sx + (p.tx - p.sx) * k,
-          p.sy + (p.ty - p.sy) * k,
-          p.sz + (p.tz - p.sz) * k,
+          (p.sx + (p.tx - p.sx) * k) * spread,
+          (p.sy + (p.ty - p.sy) * k) * spread,
+          (p.sz + (p.tz - p.sz) * k) * spread,
           ry,
           rx
         );
         const depth = (q.z + 1) / 2;
-        ctx.fillStyle = `rgba(70,230,255,${0.3 + depth * 0.7})`;
+        ctx.fillStyle = `rgba(70,230,255,${(0.3 + depth * 0.7) * fade})`;
         const s = 0.9 + depth * 1.6;
         ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);
       });
@@ -105,8 +115,8 @@ export default function IntroSphere({ size = 400 }: { size?: number }) {
       const swirl = reduce ? 0 : -t * 0.0007;
       core.forEach((p, i) => {
         const jitter = reduce ? 0 : Math.sin(t * 0.004 + i) * 0.015;
-        const q = project(p.x + jitter, p.y - jitter, p.z, swirl, rx);
-        ctx.fillStyle = `rgba(190,250,255,${0.25 + ((q.z + 0.4) / 0.8) * 0.55})`;
+        const q = project((p.x + jitter) * spread, (p.y - jitter) * spread, p.z * spread, swirl, rx);
+        ctx.fillStyle = `rgba(190,250,255,${(0.25 + ((q.z + 0.4) / 0.8) * 0.55) * fade})`;
         ctx.fillRect(q.x - 0.7, q.y - 0.7, 1.4, 1.4);
       });
     };
@@ -114,5 +124,5 @@ export default function IntroSphere({ size = 400 }: { size?: number }) {
     return () => cancelAnimationFrame(raf);
   }, [size]);
 
-  return <canvas ref={ref} aria-hidden style={{ width: size, height: size, display: "block" }} />;
+  return <canvas ref={ref} aria-hidden style={{ width: "100%", height: "100%", display: "block" }} />;
 }

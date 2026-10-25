@@ -1,158 +1,99 @@
 export interface Project {
   id: string;
   title: string;
+  category: string;
   description: string;
-  longDescription: string;
   tech: string[];
   features: string[];
-  github: string;
+  /** Repository link. Left out when there isn't a public repo to point at. */
+  github?: string;
+  /** Where to try or download it, with the label for that button. */
   live?: string;
-  image: string;
-  featured: boolean;
-  category: string;
+  liveLabel?: string;
 }
 
+// Résumé projects use the résumé wording. The three GitHub projects are written from their READMEs.
 export const projects: Project[] = [
   {
-    id: "spidy-ai",
-    title: "Spidy — AI Desktop Companion",
-    description: "A production-quality, always-on AI desktop companion for Windows with wake-word detection, local AI reasoning, and system-level automation.",
-    longDescription:
-      "Spidy is a personal AI that lives inside Windows. Say 'Hey Spidy' and a beautiful floating interface appears above every application — ready to help with anything. Features always-on wake word detection, 100% offline-capable local AI reasoning, file search and management, browser automation, coding assistance, and screen understanding via OCR. Built with Python 3.11+ and designed for safety with permission-gated actions.",
-    tech: ["Python", "AI/ML", "OCR", "Wake Word Detection", "Windows API", "Browser Automation"],
+    id: "valmentor-ai",
+    title: "ValMentor AI – AI Career & Interview Mentor",
+    category: "AI · Web",
+    description: "An AI-powered career mentoring platform, built during a hackathon in a 2-member team.",
+    tech: ["Python", "Django", "Django REST Framework", "Docker", "Celery"],
     features: [
-      "Always-on 'Hey Spidy' wake word detection",
-      "Local AI reasoning — 100% offline capable",
-      "File search, open, and management",
-      "Browser automation & web assistance",
-      "Screen understanding & OCR",
-      "Permission-gated safety system",
+      "Built an AI-powered career mentoring platform during a hackathon in a 2-member team.",
+      "Developed modules for AI mock interviews, personalized roadmaps, resume ATS analysis, and career guidance.",
+      "Containerized the application using Docker and optimized background processing with Celery.",
+    ],
+  },
+  {
+    id: "spidy-ai",
+    title: "Spidy – AI Desktop Assistant",
+    category: "AI · Personal project",
+    description:
+      "A personal AI companion that lives on the computer as an autonomous agent: it understands natural-language commands and automates desktop and browser tasks.",
+    tech: ["Python", "Ollama (Llama 3.2)", "AsyncIO", "ChromaDB", "SQLite", "Git"],
+    features: [
+      "Designed and developed a modular AI desktop assistant capable of understanding natural language commands and automating desktop and browser tasks.",
+      "Built desktop automation features to launch applications, search files, control browsers, and manage system operations through intelligent skills.",
     ],
     github: "https://github.com/shivdhiksh/spidy-ai",
-    live: "",
-    image: "/projects/spidy.png",
-    featured: true,
-    category: "AI / ML",
   },
   {
-
-    id: "valmentor-ai",
-    title: "ValMentor AI",
-    description: "AI-powered mentorship platform that personalizes career guidance using NLP and ML models.",
-    longDescription:
-      "ValMentor AI is an intelligent mentorship platform that leverages state-of-the-art NLP models to analyze a user's skills, goals, and career trajectory. It provides personalized roadmaps, suggests learning resources, and connects users with the right mentor profiles. Built with a microservices architecture for scalability.",
-    tech: ["Python", "FastAPI", "React", "TensorFlow", "MongoDB", "Docker"],
+    id: "medsafe",
+    title: "MEDSAFE – Medicine Expiry Tracker for Windows",
+    category: "Desktop app · Released",
+    description:
+      "A free, private, offline-first Windows desktop app that helps households track medicine expiry dates locally.",
+    tech: ["Python", "CustomTkinter", "SQLite", "PyInstaller", "Inno Setup"],
     features: [
-      "Personalized career roadmaps powered by AI",
-      "NLP-based skill gap analysis",
-      "Real-time mentor matching algorithm",
-      "Progress tracking dashboard",
-      "Integration with LinkedIn and GitHub APIs",
+      "Batch-based inventory with live search, sorting by expiry or name, and status and storage-location filters.",
+      "Windows toast reminders at configurable thresholds, with same-day duplicate alerts suppressed.",
+      "100% offline: local SQLite storage with one-click CSV and JSON backups. No accounts, no cloud.",
+      "Ships as a Windows installer (v1.1.0) with a glassmorphism UI in dark and light themes.",
     ],
-    github: "https://github.com/shivdhiksh",
-    live: "",
-    image: "/projects/valmentor.png",
-    featured: true,
-    category: "AI / ML",
+    github: "https://github.com/shivdhiksh/MEDSAFE",
+    live: "https://github.com/shivdhiksh/MEDSAFE/releases/tag/v1.1.0",
+    liveLabel: "Download",
   },
   {
-    id: "ai-hr-cost-engine",
-    title: "AI HR Cost Engine",
-    description: "Intelligent HR analytics engine that forecasts workforce costs and optimizes hiring decisions using predictive ML models.",
-    longDescription:
-      "A sophisticated ML-powered engine that helps HR teams forecast workforce costs with high accuracy. Uses regression models, time-series forecasting, and scenario simulation to give data-driven insights on hiring, attrition, and compensation planning.",
-    tech: ["Python", "Scikit-learn", "Pandas", "React", "Node.js", "MySQL"],
+    id: "medsafe-mobile",
+    title: "MEDSAFE Mobile – Medicine Expiry Tracker for Android",
+    category: "Android app · In progress",
+    description:
+      "An independent Android take on MEDSAFE: offline-first, private by default, with every medicine tracked in batches.",
+    tech: ["Kotlin", "Jetpack Compose", "Material 3", "Room", "DataStore", "Coroutines"],
     features: [
-      "Cost forecasting with 95%+ accuracy",
-      "Scenario-based hiring simulations",
-      "Attrition risk prediction",
-      "Interactive analytics dashboard",
-      "Automated report generation",
+      "Multi-batch inventory where each batch has its own expiry date, quantity, and storage location.",
+      "Zero analytics, zero cloud databases, zero account registrations: all data stays on the device.",
+      "Roadmap: scheduled reminders, camera photos, barcode and QR scanning, and OCR for expiry dates.",
+      "Clean MVVM architecture with a repository layer and domain use cases, on a Room database.",
     ],
-    github: "https://github.com/shivdhiksh",
-    live: "",
-    image: "/projects/hr-engine.png",
-    featured: true,
-    category: "AI / ML",
+    github: "https://github.com/shivdhiksh/MEDSAFE-Mobile",
+  },
+  {
+    id: "sentinel-boot-tracker",
+    title: "Sentinel Boot Tracker",
+    category: "Automation · Python",
+    description:
+      "A lightweight Windows laptop monitoring tool that sends Telegram notifications on startup, shutdown, lock, and unlock, and can be controlled remotely through a secure bot.",
+    tech: ["Python", "Telegram Bot API", "psutil", "PySide6", "Windows Task Scheduler", "VBScript"],
+    features: [
+      "Real-time Telegram alerts with battery status and Windows geolocation for startup, shutdown, lock, and unlock events.",
+      "Remote command engine built on an allowlist: no arbitrary shell execution, strict single-user authorization, and a structured audit trail.",
+      "Remote telemetry for CPU, RAM, disk, battery, uptime, and network, plus confirmed lock, shutdown, and restart.",
+    ],
+    github: "https://github.com/shivdhiksh/sentinel-boot-tracker",
   },
   {
     id: "twitter-sentiment",
-    title: "Twitter Sentiment Analysis",
-    description: "Real-time social media sentiment analysis pipeline using NLP and deep learning to track brand perception.",
-    longDescription:
-      "A full-stack sentiment analysis platform that streams live Twitter data, processes it through a fine-tuned BERT model, and visualizes real-time sentiment trends. Features entity extraction, emotion classification, and topic clustering.",
-    tech: ["Python", "BERT", "Tweepy", "FastAPI", "React", "Redis", "PostgreSQL"],
+    title: "Sentiment Classification of Large-Scale Twitter Data",
+    category: "NLP · Data",
+    description: "Classifies public sentiment in a large-scale Twitter dataset as positive, negative, or neutral.",
+    tech: ["Python", "Pandas", "NLTK"],
     features: [
-      "Real-time Twitter stream processing",
-      "BERT-based sentiment classification",
-      "Entity and topic extraction",
-      "Live trend visualization",
-      "Historical data analysis",
+      "Analyzed a large-scale dataset of Twitter data to classify public sentiment as positive, negative, or neutral.",
+      "Preprocessed raw text data by tokenizing, removing stop words, and cleaning noise to optimize model performance.",
     ],
-    github: "https://github.com/shivdhiksh",
-    live: "",
-    image: "/projects/sentiment.png",
-    featured: true,
-    category: "NLP",
-  },
-  {
-    id: "ai-proctoring",
-    title: "AI Examination Proctoring System",
-    description: "Computer vision-based proctoring system that detects malpractice in online exams using real-time face and gaze analysis.",
-    longDescription:
-      "An intelligent proctoring system that uses computer vision algorithms to monitor exam integrity. Detects multiple faces, gaze deviation, tab switching, and unusual movements. Generates automated violation reports with timestamped evidence.",
-    tech: ["Python", "OpenCV", "TensorFlow", "Flask", "React", "WebRTC", "MongoDB"],
-    features: [
-      "Real-time face detection & recognition",
-      "Gaze tracking and head pose estimation",
-      "Tab/window switch detection",
-      "Automated violation reporting",
-      "WebRTC live stream processing",
-    ],
-    github: "https://github.com/shivdhiksh",
-    live: "",
-    image: "/projects/proctoring.png",
-    featured: true,
-    category: "Computer Vision",
-  },
-  {
-    id: "hackathon-project",
-    title: "Hackathon Innovation Project",
-    description: "Award-winning hackathon project solving real-world problems with cutting-edge AI and rapid prototyping.",
-    longDescription:
-      "A rapid-prototyped solution built under 24-hour hackathon conditions. Demonstrates the ability to ideate, architect, and deploy a working product under extreme time pressure. Won recognition for innovation and technical execution.",
-    tech: ["React", "Node.js", "Python", "AWS", "MongoDB"],
-    features: [
-      "Built under 24-hour constraint",
-      "Scalable microservices architecture",
-      "Real-world problem solving",
-      "Live product demo",
-      "Award-winning innovation",
-    ],
-    github: "https://github.com/shivdhiksh",
-    live: "",
-    image: "/projects/hackathon.png",
-    featured: false,
-    category: "Full Stack",
-  },
-  {
-    id: "strands-agent",
-    title: "Strands Agent Project",
-    description: "Autonomous AI agent built with LLM orchestration that can plan, reason, and execute multi-step tasks.",
-    longDescription:
-      "An autonomous AI agent framework leveraging large language models with tool-use capabilities. The agent can decompose complex goals, plan multi-step strategies, use external tools (web search, code execution, APIs), and self-correct based on feedback.",
-    tech: ["Python", "LangChain", "OpenAI API", "FastAPI", "React", "Docker"],
-    features: [
-      "LLM-powered autonomous planning",
-      "Tool-use and function calling",
-      "Multi-step task decomposition",
-      "Self-reflection and correction",
-      "Extensible tool plugin system",
-    ],
-    github: "https://github.com/shivdhiksh",
-    live: "",
-    image: "/projects/strands.png",
-    featured: false,
-    category: "AI / ML",
   },
 ];

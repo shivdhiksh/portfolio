@@ -1,68 +1,33 @@
 export interface Experience {
   id: string;
-  type: "internship" | "freelance" | "hackathon" | "training" | "certification";
   title: string;
   organization: string;
+  location: string;
   period: string;
-  description: string;
-  skills: string[];
-  icon: string;
+  bullets: string[];
 }
 
 export const experiences: Experience[] = [
   {
-    id: "exp-1",
-    type: "internship",
-    title: "AI/ML Developer Intern",
-    organization: "Tech Startup",
-    period: "2024 – Present",
-    description:
-      "Developing and deploying machine learning models for real-world business problems. Working on NLP pipelines, model optimization, and full-stack AI product development.",
-    skills: ["Python", "TensorFlow", "FastAPI", "React", "Docker"],
-    icon: "Briefcase",
+    id: "data-annotation-intern",
+    title: "Data Annotation Intern",
+    organization: "Tao Digital Solutions | Student Tribe",
+    location: "Hyderabad",
+    period: "March 2026",
+    bullets: [
+      "Processed and accurately labeled over 4,900 data points (averaging 350 per day) over a two-week period, structuring critical datasets to improve the training efficiency of machine learning models.",
+      "Executed rigorous quality assurance checks on an average of 350 daily data inputs, ensuring clean data pipelines for downstream AI processing.",
+    ],
   },
   {
-    id: "exp-2",
-    type: "freelance",
-    title: "Freelance Full Stack Developer",
-    organization: "Independent",
-    period: "2023 – Present",
-    description:
-      "Building custom web applications and AI-powered tools for clients. Delivered multiple production-grade projects with modern tech stacks.",
-    skills: ["React", "Node.js", "MongoDB", "Python", "AWS"],
-    icon: "Laptop",
-  },
-  {
-    id: "exp-3",
-    type: "hackathon",
-    title: "National Hackathon Participant",
-    organization: "Multiple Events",
-    period: "2023 – 2024",
-    description:
-      "Participated in multiple national-level hackathons, building innovative solutions under time pressure. Achieved recognition for technical excellence and creative problem-solving.",
-    skills: ["Rapid Prototyping", "Team Collaboration", "Problem Solving"],
-    icon: "Zap",
-  },
-  {
-    id: "exp-4",
-    type: "training",
-    title: "AI/ML Specialization Training",
-    organization: "Online Learning Platform",
-    period: "2023",
-    description:
-      "Completed comprehensive training in machine learning, deep learning, and AI application development. Built end-to-end ML pipelines and deployed production models.",
-    skills: ["Machine Learning", "Deep Learning", "Python", "TensorFlow", "PyTorch"],
-    icon: "BookOpen",
-  },
-  {
-    id: "exp-5",
-    type: "certification",
-    title: "Full Stack Web Development Certification",
-    organization: "Certification Authority",
-    period: "2022",
-    description:
-      "Earned certification in modern full-stack development covering React, Node.js, databases, and cloud deployment. Built multiple production projects as part of the curriculum.",
-    skills: ["React", "Node.js", "MongoDB", "REST APIs", "JWT"],
-    icon: "Award",
+    id: "web-development-intern",
+    title: "Web Development Intern",
+    organization: "Alcronix",
+    location: "Remote",
+    period: "July 2025 – September 2025",
+    bullets: [
+      "Assisted in building and optimizing web interfaces using HTML, CSS, JavaScript.",
+      "Collaborated remotely to troubleshoot bugs, refine user interface components, and ensure responsive design.",
+    ],
   },
 ];

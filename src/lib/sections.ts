@@ -1,11 +1,15 @@
-import { achievements } from "@/data/achievements";
+import { certifications } from "@/data/certifications";
+import { experiences } from "@/data/experience";
 import { projects } from "@/data/projects";
 import { skillCategories } from "@/data/skills";
 
 export interface SectionMeta {
   id: string;
+  /** Nav label. */
   label: string;
-  /** Two accent colors the backdrop blends towards while this section is in view. */
+  /** Chapter title shown in headers and by Spidy. */
+  title: string;
+  /** Two accent colors the world blends towards while this chapter is in view. */
   colors: [string, string];
   /** Things Spidy says on arrival. Rotates on repeat visits. */
   lines: string[];
@@ -13,116 +17,88 @@ export interface SectionMeta {
   facts: string[];
 }
 
-// Order must match the DOM order of the sections in app/page.tsx.
-const BASE_SECTIONS: Omit<SectionMeta, "facts">[] = [
+const skillCount = skillCategories.reduce((n, c) => n + c.skills.length, 0);
+
+// Order must match the DOM order of the chapters in app/page.tsx.
+export const SECTIONS: SectionMeta[] = [
   {
     id: "home",
     label: "Home",
+    title: "The Gate",
     colors: ["#22d3ee", "#ef233c"],
     lines: [
-      "Systems online. I'm Spidy, Shiva's autonomous agent. Scroll and I'll guide you through the site.",
-      "Back at the entry point. Scan complete, no threats detected.",
+      "Hi, I'm Spidy, Shiva's assistant. Scroll and I'll travel with you and point out what matters.",
+      "Back at the top. Want a quick tour? Just scroll.",
     ],
+    facts: ["AI Developer", "Full Stack", "ML Enthusiast"],
   },
   {
     id: "about",
     label: "About",
+    title: "About",
     colors: ["#3b82f6", "#22d3ee"],
     lines: [
-      "Profile loaded. AI engineer, full stack builder, hackathon addict.",
+      "This is Shiva: who he is, what drives him, and how he works.",
       "Re-reading the dossier. Still impressive.",
     ],
+    facts: ["AI & ML", "Full stack", "B.Tech CSE (DS)"],
   },
   {
     id: "skills",
     label: "Skills",
+    title: "Skills",
     colors: ["#ef233c", "#3b82f6"],
     lines: [
-      "Skill matrix online. Python, ML, React, Next.js and more, all calibrated.",
+      "Here are Shiva's skills, grouped by area. They come straight from his résumé and projects.",
       "Capabilities re-indexed. Nothing missing.",
     ],
+    facts: [`${skillCategories.length} areas`, `${skillCount} skills`],
   },
   {
     id: "projects",
     label: "Projects",
+    title: "Projects",
     colors: ["#e11d48", "#f59e0b"],
     lines: [
-      "Deploying project archive. Every build below shipped for real.",
-      "Project archive reloaded. Pick one and dig in.",
+      "Projects slide past as you scroll. Fun fact: I'm one of them.",
+      "Projects again. Pick one and check the code.",
     ],
+    facts: [`${projects.length} projects`],
   },
   {
-    id: "resume",
-    label: "Resume",
-    colors: ["#22d3ee", "#3b82f6"],
+    id: "journey",
+    label: "Experience",
+    title: "Experience",
+    colors: ["#22d3ee", "#8b5cf6"],
     lines: [
-      "Resume module ready. Want the full file? Grab the download.",
-      "Credentials verified.",
+      "Shiva's internships and certifications, with what he actually did in each.",
+      "Experience and certifications again. Two internships so far, with more to come.",
     ],
+    facts: [`${experiences.length} internships`, `${certifications.length} certifications`],
   },
   {
-    id: "achievements",
-    label: "Achievements",
-    colors: ["#f59e0b", "#ef233c"],
-    lines: [
-      "Trophy room unlocked. Hackathons, certifications, wins.",
-      "Achievements tallied again. Still a lot.",
-    ],
-  },
-  {
-    id: "github",
+    id: "signal",
     label: "GitHub",
+    title: "GitHub",
     colors: ["#22c55e", "#22d3ee"],
     lines: [
-      "Pulling live repo telemetry. Commits don't lie.",
-      "Repo feed refreshed.",
+      "Live stats from Shiva's GitHub. Commits don't lie.",
+      "GitHub stats refreshed.",
     ],
+    facts: ["Live from GitHub"],
   },
   {
     id: "contact",
     label: "Contact",
+    title: "Contact",
     colors: ["#ef233c", "#22d3ee"],
     lines: [
-      "Comms channel open. Send a message and Shiva gets it directly.",
-      "Channel still open. No need to be shy.",
+      "Want to work together? Send a message and it opens in your email app, ready to send to Shiva.",
+      "Still here. No need to be shy.",
     ],
-  },
-  {
-    id: "testimonials",
-    label: "Testimonials",
-    colors: ["#8b5cf6", "#ef233c"],
-    lines: [
-      "Incoming transmissions from people who've worked with Shiva.",
-      "Reviewing the field reports.",
-    ],
-  },
-  {
-    id: "blog",
-    label: "Blog",
-    colors: ["#3b82f6", "#e11d48"],
-    lines: [
-      "Final sector: writing and notes. End of scan.",
-      "Last stop reached. Want to go back to the top?",
-    ],
+    facts: ["Message form", "Email", "Social links"],
   },
 ];
-
-const skillCount = skillCategories.reduce((n, c) => n + c.skills.length, 0);
-
-const FACTS: Record<string, string[]> = {
-  home: ["AI Developer", "Full Stack", "ML Enthusiast"],
-  about: ["AI & ML", "Full stack", "Hackathons"],
-  skills: [`${skillCategories.length} categories`, `${skillCount} skills`],
-  projects: [`${projects.length} projects`, `${projects.filter((p) => p.featured).length} featured`],
-  resume: ["Full résumé at /resume"],
-  achievements: [`${achievements.length} milestones`],
-  github: ["Live repo stats"],
-  contact: ["Message form", "Social links"],
-  testimonials: ["Feedback from collaborators"],
-  blog: ["Writing & notes"],
-};
-
-export const SECTIONS: SectionMeta[] = BASE_SECTIONS.map((s) => ({ ...s, facts: FACTS[s.id] ?? [] }));
 
 export function hexToRgb(hex: string): [number, number, number] {
   const n = parseInt(hex.slice(1), 16);
@@ -136,8 +112,10 @@ export function lerpColor(a: string, b: string, t: number): [number, number, num
 }
 
 /**
- * Fractional index of the section crossing the viewport's vertical midpoint,
- * e.g. 2.4 means 40% of the way from SECTIONS[2] to SECTIONS[3].
+ * Fractional index of the chapter crossing the viewport's vertical midpoint,
+ * e.g. 2.4 means 40% of the way from SECTIONS[2] to SECTIONS[3]. Past the last
+ * chapter's start it keeps climbing towards SECTIONS.length so the world can
+ * continue to the end of the page.
  */
 export function getSceneProgress(): number {
   const mid = window.innerHeight * 0.5;
@@ -148,7 +126,14 @@ export function getSceneProgress(): number {
     if (t !== undefined && t <= mid) idx = i;
   }
   const cur = tops[idx];
+  if (cur === undefined) return idx;
   const next = tops[idx + 1];
-  if (cur === undefined || next === undefined || next === cur) return idx;
+  if (next === undefined) {
+    // Last chapter: progress runs to the bottom of the document.
+    const end = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+    const span = Math.max(1, end + (mid - cur));
+    return idx + Math.min(1, Math.max(0, (mid - cur) / span));
+  }
+  if (next === cur) return idx;
   return idx + Math.min(1, Math.max(0, (mid - cur) / (next - cur)));
 }

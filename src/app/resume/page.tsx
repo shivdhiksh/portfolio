@@ -479,10 +479,10 @@ export default function ResumePage() {
                   <span className="exp-title">Data Annotation Intern</span>
                   <span className="exp-date">March 2026</span>
                 </div>
-                <div className="exp-company">Tao Digital Solutions · Student Tribe, Hyderabad</div>
+                <div className="exp-company">Tao Digital Solutions | Student Tribe · Hyderabad</div>
                 <ul className="project-bullets">
-                  <li>Processed, labeled, and organized datasets to support the training and accuracy of machine learning models.</li>
-                  <li>Maintained strict quality assurance standards while reviewing data inputs to ensure clean data pipelines.</li>
+                  <li>Processed and accurately labeled over 4,900 data points (averaging 350 per day) over a two-week period, structuring critical datasets to improve the training efficiency of machine learning models.</li>
+                  <li>Executed rigorous quality assurance checks on an average of 350 daily data inputs, ensuring clean data pipelines for downstream AI processing.</li>
                 </ul>
               </div>
 
@@ -494,7 +494,7 @@ export default function ResumePage() {
                 <div className="exp-company">Alcronix · Remote</div>
                 <ul className="project-bullets">
                   <li>Assisted in building and optimizing web interfaces using HTML, CSS, JavaScript.</li>
-                  <li>Collaborated remotely to troubleshoot bugs, refine UI components, and ensure responsive design.</li>
+                  <li>Collaborated remotely to troubleshoot bugs, refine user interface components, and ensure responsive design.</li>
                 </ul>
               </div>
             </section>

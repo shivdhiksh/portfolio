@@ -1,8 +1,18 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useScroll, useSpring, useTransform, useVelocity } from "framer-motion";
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useMotionValue,
+  useScroll,
+  useSpring,
+  useTransform,
+  useVelocity,
+} from "framer-motion";
 import { ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { SECTIONS } from "@/lib/sections";
+import { goToChapter } from "@/lib/nav";
 import { useActiveSection } from "@/hooks/useActiveSection";
 
 type Status = "IDLE" | "SCANNING" | "NAVIGATING";
@@ -12,6 +22,11 @@ const NAV_MS = 1400;
 const SNAP_ZONE = 0.35;
 // Touch momentum can keep scrolling a while after the last touch event.
 const INPUT_WINDOW_MS = 2500;
+const BUBBLE_MS = 8000;
+// On phones the bubble covers a lot of the screen, so it tucks itself away sooner.
+const BUBBLE_MS_PHONE = 4500;
+const ORB = 48;
+const MARGIN = 16;
 
 function SpidyCore() {
   const legs = [
@@ -28,18 +43,17 @@ function SpidyCore() {
     <svg viewBox="0 0 64 64" width="100%" height="100%" aria-hidden>
       <defs>
         <radialGradient id="spidy-core" cx="50%" cy="40%" r="60%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="35%" stopColor="#22d3ee" />
-          <stop offset="100%" stopColor="#ef233c" />
+          <stop offset="0%" stopColor="#5fa9b6" />
+          <stop offset="40%" stopColor="#0b5f73" />
+          <stop offset="100%" stopColor="#5e101b" />
         </radialGradient>
       </defs>
-      <g stroke="#22d3ee" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <g stroke="#0e6578" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round">
         {legs.map((d, i) => (
           <path key={i} d={d} className="spidy-leg" style={{ animationDelay: `${i * -0.18}s` }} />
         ))}
       </g>
-      <ellipse cx="32" cy="38" rx="8" ry="10" fill="#050914" stroke="#ef233c" strokeWidth="1.4" />
-      <path d="M32 30 L32 46 M27 36 L37 36 M28 31 L36 43 M36 31 L28 43" stroke="#ef233c" strokeWidth="0.8" opacity="0.7" />
+      <ellipse cx="32" cy="38" rx="8" ry="10" fill="#010308" stroke="#6e1220" strokeWidth="1.4" />
       <circle cx="32" cy="26" r="6" fill="url(#spidy-core)" />
       <circle cx="30" cy="25" r="1.3" fill="#02040a" />
       <circle cx="34" cy="25" r="1.3" fill="#02040a" />
@@ -47,12 +61,26 @@ function SpidyCore() {
   );
 }
 
+/**
+ * Spidy rides along with the page: he swings between the two sides of the screen
+ * as chapters change, hangs from a thread that sways with scroll speed, announces
+ * each chapter in a bubble, and (auto-pilot) pulls the page onto the next chapter.
+ */
 export default function SpidyAssistant() {
   const index = useActiveSection();
   const section = SECTIONS[index];
 
-  // Start minimized on phones so the panel doesn't cover content.
-  const [collapsed, setCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 640);
+  // The screen is the holographic panel. "auto" pops it up on each chapter and hides it again,
+  // "on" keeps it open, "off" keeps it dark until the icon is tapped again (remembered between visits).
+  const [screen, setScreen] = useState<"auto" | "on" | "off">(() => {
+    if (typeof window === "undefined") return "auto";
+    try {
+      return localStorage.getItem("spidy-screen") === "off" ? "off" : "auto";
+    } catch {
+      return "auto";
+    }
+  });
+  const [bubble, setBubble] = useState(false);
   const [autopilot, setAutopilot] = useState(() => {
     if (typeof window === "undefined") return true;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
@@ -63,16 +91,7 @@ export default function SpidyAssistant() {
     }
   });
   const [status, setStatus] = useState<Status>("IDLE");
-  const [zip, setZip] = useState(0);
-
-  // Pick a line per section; repeat visits rotate through the alternatives.
-  const [shown, setShown] = useState(index);
-  const [visits, setVisits] = useState<Record<number, number>>({ [index]: 0 });
-  if (shown !== index) {
-    setShown(index);
-    setVisits((v) => ({ ...v, [index]: (v[index] ?? -1) + 1 }));
-  }
-  const line = section.lines[(visits[index] ?? 0) % section.lines.length];
+  const [wide, setWide] = useState(() => typeof window !== "undefined" && window.innerWidth >= 1000);
 
   // Stay hidden until the welcome intro hands over, then greet.
   const [ready, setReady] = useState(
@@ -80,9 +99,50 @@ export default function SpidyAssistant() {
   );
   useEffect(() => {
     const onReady = () => setReady(true);
+    const onResize = () => setWide(window.innerWidth >= 1000);
     window.addEventListener("spidy:ready", onReady);
-    return () => window.removeEventListener("spidy:ready", onReady);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("spidy:ready", onReady);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
+
+  // Pick a line per chapter; repeat visits rotate through the alternatives. A new chapter pops the bubble open.
+  const [shown, setShown] = useState(index);
+  const [visits, setVisits] = useState<Record<number, number>>({ [index]: 0 });
+  if (shown !== index) {
+    setShown(index);
+    setVisits((v) => ({ ...v, [index]: (v[index] ?? -1) + 1 }));
+    setBubble(true);
+  }
+  const line = section.lines[(visits[index] ?? 0) % section.lines.length];
+
+  const [firstOpen, setFirstOpen] = useState(false);
+  if (ready && !firstOpen) {
+    setFirstOpen(true);
+    setBubble(true);
+  }
+
+  useEffect(() => {
+    if (!bubble || screen !== "auto") return;
+    const t = setTimeout(() => setBubble(false), window.innerWidth < 560 ? BUBBLE_MS_PHONE : BUBBLE_MS);
+    return () => clearTimeout(t);
+  }, [bubble, screen, index]);
+
+  const open = screen === "on" || (screen === "auto" && bubble);
+  const screenOff = screen === "off";
+
+  const toggleScreen = () => {
+    const next = screenOff ? "on" : "off";
+    setScreen(next);
+    setBubble(next === "on");
+    try {
+      localStorage.setItem("spidy-screen", next);
+    } catch {
+      /* storage unavailable, the choice just won't persist */
+    }
+  };
 
   const [typed, setTyped] = useState({ line: "", n: 0 });
   useEffect(() => {
@@ -94,14 +154,32 @@ export default function SpidyAssistant() {
   }, [line, ready]);
   const shownText = typed.line === line ? line.slice(0, typed.n) : "";
 
+  // Swing to the other side of the screen as chapters change.
+  const side: "left" | "right" = wide && index % 2 === 1 ? "left" : "right";
+  const sx = useMotionValue(0);
+  const sy = useMotionValue(0);
+  const sxVel = useVelocity(sx);
+  const swingTilt = useTransform(sxVel, [-2500, 2500], [-16, 16]);
+  const threadSway = useTransform(sxVel, [-2500, 2500], [-9, 9]);
+  useEffect(() => {
+    const target = side === "left" ? -(window.innerWidth - ORB - MARGIN * 2) : 0;
+    const a = animate(sx, target, { type: "spring", stiffness: 42, damping: 12 });
+    const b = animate(sy, [0, -150, 0], { duration: 1.2, ease: "easeInOut" });
+    return () => {
+      a.stop();
+      b.stop();
+    };
+  }, [side, sx, sy]);
+
   // Motion values: the core tilts and its glow reacts to scroll speed without re-rendering.
   const { scrollY, scrollYProgress } = useScroll();
   const velocity = useSpring(useVelocity(scrollY), { stiffness: 120, damping: 30 });
-  const tilt = useTransform(velocity, [-3000, 3000], [-22, 22]);
-  const glow = useTransform(velocity, (v) => `drop-shadow(0 0 ${8 + Math.min(Math.abs(v) / 60, 22)}px rgba(34,211,238,0.75))`);
+  const scrollTilt = useTransform(velocity, [-3000, 3000], [-22, 22]);
+  const tilt = useTransform([scrollTilt, swingTilt], ([a, b]: number[]) => a + b);
+  const glow = useTransform(velocity, (v) => `drop-shadow(0 0 ${2 + Math.min(Math.abs(v) / 120, 8)}px rgba(34,211,238,0.22))`);
   // Spidy trails the scroll like he's hanging on a thread: sags when you scroll, swings back when you stop.
   const lag = useSpring(useTransform(velocity, [-3000, 3000], [-46, 46]), { stiffness: 90, damping: 9 });
-  const sway = useTransform(velocity, [-3000, 3000], [-5, 5]);
+  const orbY = useTransform([sy, lag], ([a, b]: number[]) => a + b);
   const percent = useTransform(scrollYProgress, (p) => `${Math.round(p * 100)}%`);
 
   const autopilotRef = useRef(autopilot);
@@ -120,17 +198,14 @@ export default function SpidyAssistant() {
   };
 
   const goTo = useCallback((id: string) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!document.getElementById(id)) return;
     navUntil.current = Date.now() + NAV_MS;
     setStatus("NAVIGATING");
-    setZip((z) => z + 1);
-    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: reduce ? "auto" : "smooth" });
+    goToChapter(id);
     window.setTimeout(() => setStatus((s) => (s === "NAVIGATING" ? "IDLE" : s)), NAV_MS);
   }, []);
 
-  // Auto-pilot: once scrolling settles near a section boundary, Spidy pulls the page onto it.
+  // Auto-pilot: once scrolling settles near a chapter boundary, Spidy pulls the page onto it.
   useEffect(() => {
     let lastY = window.scrollY;
     let dir = 1;
@@ -148,7 +223,7 @@ export default function SpidyAssistant() {
         const el = document.getElementById(s.id);
         if (!el) continue;
         const top = el.getBoundingClientRect().top;
-        // Heading toward a section: pull forward. Heading back up: land on the one just passed.
+        // Heading toward a chapter: pull forward. Heading back up: land on the one just passed.
         const inZone = dir > 0 ? top > 8 && top < vh * SNAP_ZONE : top < -8 && top > -vh * SNAP_ZONE;
         if (inZone && (!best || Math.abs(top) < Math.abs(best.top))) best = { id: s.id, top };
       }
@@ -159,7 +234,7 @@ export default function SpidyAssistant() {
       const y = window.scrollY;
       if (y !== lastY) dir = y > lastY ? 1 : -1;
       lastY = y;
-      if (Date.now() >= navUntil.current) setStatus((s) => (s === "SCANNING" ? s : "SCANNING"));
+      if (Date.now() >= navUntil.current) setStatus("SCANNING");
       window.clearTimeout(timer);
       timer = window.setTimeout(settle, 140);
     };
@@ -185,44 +260,21 @@ export default function SpidyAssistant() {
 
   return (
     <>
-      {/* Web strand fired whenever Spidy navigates */}
-      <AnimatePresence>
-        {zip > 0 && (
-          <motion.div
-            key={zip}
-            aria-hidden
-            initial={{ scaleY: 0, opacity: 0.9 }}
-            animate={{ scaleY: 1, opacity: 0 }}
-            transition={{ scaleY: { duration: 0.45, ease: "easeOut" }, opacity: { duration: 0.9, delay: 0.2 } }}
-            style={{
-              position: "fixed",
-              right: "2.45rem",
-              bottom: "5rem",
-              width: 2,
-              height: "calc(100vh - 5rem)",
-              transformOrigin: "bottom",
-              background: "linear-gradient(to top, #22d3ee, rgba(255,255,255,0.9))",
-              boxShadow: "0 0 12px #22d3ee",
-              pointerEvents: "none",
-              zIndex: 1090,
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* The thread Spidy hangs from; it sways with scroll speed */}
+      {/* The tether Spidy hangs from; it sways as he swings */}
       <motion.div
         aria-hidden
         initial={{ opacity: 0 }}
         animate={{ opacity: ready ? 1 : 0 }}
         style={{
           position: "fixed",
-          right: "2.45rem",
+          right: "calc(40px - 0.75px)",
           top: 0,
-          bottom: "5.4rem",
+          bottom: 72,
           width: 1.5,
+          x: sx,
+          y: sy,
           transformOrigin: "top",
-          rotate: sway,
+          rotate: threadSway,
           background: "linear-gradient(to bottom, transparent, rgba(34,211,238,0.55))",
           pointerEvents: "none",
           zIndex: 1080,
@@ -235,31 +287,32 @@ export default function SpidyAssistant() {
         transition={{ type: "spring", stiffness: 160, damping: 14 }}
         style={{
           position: "fixed",
-          right: "1rem",
-          bottom: "1rem",
+          right: MARGIN,
+          bottom: MARGIN,
+          width: ORB,
+          height: ORB,
           zIndex: 1100,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
-          gap: "0.6rem",
-          y: lag,
+          x: sx,
+          y: orbY,
           pointerEvents: ready ? "auto" : "none",
         }}
       >
         <AnimatePresence>
-          {!collapsed && (
+          {open && (
             <motion.div
-              initial={{ opacity: 0, y: 16, scale: 0.96 }}
+              initial={{ opacity: 0, y: 14, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.96 }}
-              transition={{ duration: 0.25 }}
-              className="glass spidy-panel"
+              exit={{ opacity: 0, y: 14, scale: 0.96 }}
+              transition={{ duration: 0.28 }}
+              className="holo"
               style={{
-                width: "min(330px, calc(100vw - 2rem))",
-                borderRadius: 14,
-                padding: "0.85rem 0.95rem",
-                borderColor: "rgba(34,211,238,0.35)",
-                boxShadow: "0 0 30px rgba(34,211,238,0.12), var(--glass-shadow)",
+                position: "absolute",
+                bottom: ORB + 26,
+                [side]: 0,
+                width: "min(290px, calc(100vw - 2rem))",
+                padding: "0.65rem 0.8rem",
+                borderColor: "rgba(34,211,238,0.3)",
+                boxShadow: "0 14px 44px rgba(0,0,0,0.75)",
                 fontFamily: "var(--font-mono)",
               }}
             >
@@ -273,21 +326,18 @@ export default function SpidyAssistant() {
                     boxShadow: `0 0 8px ${statusColor}`,
                   }}
                 />
-                <span style={{ fontSize: 10, letterSpacing: "0.14em", color: "var(--accent-cyan)", fontWeight: 700 }}>
+                <span style={{ fontSize: 10, letterSpacing: "0.14em", color: "var(--cyan)", fontWeight: 700 }}>
                   SPIDY // AUTONOMOUS AGENT
                 </span>
                 <span style={{ marginLeft: "auto", fontSize: 10, color: statusColor, letterSpacing: "0.1em" }}>{status}</span>
               </div>
 
-              <p
-                aria-live="polite"
-                style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--text-primary)", minHeight: "3.9em" }}
-              >
+              <p aria-live="polite" style={{ fontSize: 12, lineHeight: 1.5, color: "var(--bone)", minHeight: "3.4em" }}>
                 {shownText}
                 <span className="spidy-caret" />
               </p>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 8 }}>
+              <div className="spidy-facts" style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 8 }}>
                 {section.facts.map((fact) => (
                   <span key={fact} className="spidy-chip">
                     {fact}
@@ -303,22 +353,17 @@ export default function SpidyAssistant() {
                   margin: "0.65rem 0 0.5rem",
                   fontSize: 10,
                   letterSpacing: "0.08em",
-                  color: "var(--text-secondary)",
+                  color: "var(--bone-dim)",
                 }}
               >
                 <span>
-                  SECTOR {String(index + 1).padStart(2, "0")}/{SECTIONS.length} · {section.label.toUpperCase()}
+                  CH.{String(index).padStart(2, "0")}/{String(SECTIONS.length - 1).padStart(2, "0")} · {section.title.toUpperCase()}
                 </span>
                 <motion.span>{percent}</motion.span>
               </div>
 
               <div style={{ display: "flex", gap: 6 }}>
-                <button
-                  className="spidy-btn"
-                  onClick={() => goTo(prev.id)}
-                  disabled={index === 0}
-                  aria-label={`Go to ${prev.label}`}
-                >
+                <button className="spidy-btn" onClick={() => goTo(prev.id)} disabled={index === 0} aria-label={`Go to ${prev.label}`}>
                   <ChevronUp size={14} />
                 </button>
                 <button
@@ -336,8 +381,8 @@ export default function SpidyAssistant() {
                   style={{
                     flex: 1,
                     gap: 6,
-                    color: autopilot ? "#02040a" : "var(--text-secondary)",
-                    background: autopilot ? "var(--accent-cyan)" : undefined,
+                    color: autopilot ? "#02040a" : "var(--bone-dim)",
+                    background: autopilot ? "var(--cyan)" : undefined,
                   }}
                 >
                   <Zap size={13} />
@@ -348,20 +393,23 @@ export default function SpidyAssistant() {
           )}
         </AnimatePresence>
 
+        {open && <span className="holo-beam" aria-hidden style={{ bottom: ORB - 4 }} />}
         <motion.button
-          onClick={() => setCollapsed((c) => !c)}
-          aria-label={collapsed ? "Open Spidy assistant" : "Minimize Spidy assistant"}
-          aria-expanded={!collapsed}
+          onClick={toggleScreen}
+          aria-label={screenOff ? "Turn Spidy's screen on" : "Turn Spidy's screen off"}
+          aria-pressed={!screenOff}
+          title={screenOff ? "Tap to turn Spidy's screen on" : "Tap to turn Spidy's screen off"}
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.94 }}
           style={{
             position: "relative",
-            width: 64,
-            height: 64,
+            width: ORB,
+            height: ORB,
             borderRadius: "50%",
-            border: "1px solid rgba(34,211,238,0.5)",
-            background: "radial-gradient(circle at 50% 40%, rgba(34,211,238,0.18), rgba(2,4,10,0.9) 70%)",
-            padding: 6,
+            border: screenOff ? "1px solid rgba(160,180,200,0.25)" : "1px solid rgba(34,211,238,0.2)",
+            background: "radial-gradient(circle at 50% 40%, rgba(34,211,238,0.03), rgba(0,2,6,0.99) 75%)",
+            opacity: screenOff ? 0.6 : 1,
+            padding: 4,
           }}
         >
           <span
@@ -370,11 +418,11 @@ export default function SpidyAssistant() {
               position: "absolute",
               inset: -5,
               borderRadius: "50%",
-              border: "1px dashed rgba(239,35,60,0.7)",
+              border: "1px dashed rgba(239,35,60,0.38)",
               animation: "spin-slow 9s linear infinite",
             }}
           />
-          <motion.div style={{ width: "100%", height: "100%", rotate: tilt, filter: glow }}>
+          <motion.div style={{ width: "100%", height: "100%", rotate: tilt, filter: screenOff ? "grayscale(1)" : glow }}>
             <SpidyCore />
           </motion.div>
         </motion.button>
