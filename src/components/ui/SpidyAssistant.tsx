@@ -10,7 +10,7 @@ import {
   useTransform,
   useVelocity,
 } from "framer-motion";
-import { ChevronDown, ChevronUp, Zap } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { SECTIONS } from "@/lib/sections";
 import { goToChapter } from "@/lib/nav";
 import { useActiveSection } from "@/hooks/useActiveSection";
@@ -81,15 +81,6 @@ export default function SpidyAssistant() {
     }
   });
   const [bubble, setBubble] = useState(false);
-  const [autopilot, setAutopilot] = useState(() => {
-    if (typeof window === "undefined") return true;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
-    try {
-      return localStorage.getItem("spidy-autopilot") !== "off";
-    } catch {
-      return true;
-    }
-  });
   const [status, setStatus] = useState<Status>("IDLE");
   const [wide, setWide] = useState(() => typeof window !== "undefined" && window.innerWidth >= 1000);
 
@@ -182,20 +173,13 @@ export default function SpidyAssistant() {
   const orbY = useTransform([sy, lag], ([a, b]: number[]) => a + b);
   const percent = useTransform(scrollYProgress, (p) => `${Math.round(p * 100)}%`);
 
-  const autopilotRef = useRef(autopilot);
+  // Auto-pilot (pulling the page onto a chapter once scrolling settles nearby) is always on,
+  // except for visitors who ask their device for reduced motion.
+  const autopilotRef = useRef(
+    typeof window !== "undefined" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
   const navUntil = useRef(0);
   const lastInput = useRef(0);
-
-  const toggleAutopilot = () => {
-    const next = !autopilot;
-    autopilotRef.current = next;
-    setAutopilot(next);
-    try {
-      localStorage.setItem("spidy-autopilot", next ? "on" : "off");
-    } catch {
-      /* storage unavailable, setting just won't persist */
-    }
-  };
 
   const goTo = useCallback((id: string) => {
     if (!document.getElementById(id)) return;
@@ -363,30 +347,23 @@ export default function SpidyAssistant() {
               </div>
 
               <div style={{ display: "flex", gap: 6 }}>
-                <button className="spidy-btn" onClick={() => goTo(prev.id)} disabled={index === 0} aria-label={`Go to ${prev.label}`}>
-                  <ChevronUp size={14} />
+                <button
+                  className="spidy-btn"
+                  style={{ flex: 1 }}
+                  onClick={() => goTo(prev.id)}
+                  disabled={index === 0}
+                  aria-label={`Go to ${prev.label}`}
+                >
+                  <ChevronUp size={15} />
                 </button>
                 <button
                   className="spidy-btn"
+                  style={{ flex: 1 }}
                   onClick={() => goTo(next.id)}
                   disabled={index === SECTIONS.length - 1}
                   aria-label={`Go to ${next.label}`}
                 >
-                  <ChevronDown size={14} />
-                </button>
-                <button
-                  className="spidy-btn"
-                  onClick={toggleAutopilot}
-                  aria-pressed={autopilot}
-                  style={{
-                    flex: 1,
-                    gap: 6,
-                    color: autopilot ? "#02040a" : "var(--bone-dim)",
-                    background: autopilot ? "var(--cyan)" : undefined,
-                  }}
-                >
-                  <Zap size={13} />
-                  AUTO-PILOT {autopilot ? "ON" : "OFF"}
+                  <ChevronDown size={15} />
                 </button>
               </div>
             </motion.div>
