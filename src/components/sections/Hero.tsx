@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowDown, Download, Mail, Sparkles } from "lucide-react";
 
 const roles = [
@@ -41,96 +41,18 @@ function useTypewriter(words: string[], speed = 100, pause = 2000) {
   return text;
 }
 
-function ParticleCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const particles: { x: number; y: number; vx: number; vy: number; size: number; opacity: number; hue: number }[] = [];
-    for (let i = 0; i < 80; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        size: Math.random() * 2 + 0.5,
-        opacity: Math.random() * 0.5 + 0.1,
-        hue: Math.random() > 0.5 ? 220 : 270,
-      });
-    }
-
-    let animId: number;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 70%, 60%, ${p.opacity})`;
-        ctx.fill();
-      });
-
-      // Draw connections
-      particles.forEach((a, i) => {
-        particles.slice(i + 1).forEach((b) => {
-          const dist = Math.hypot(a.x - b.x, a.y - b.y);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = `rgba(100, 149, 237, ${0.15 * (1 - dist / 120)})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        });
-      });
-
-      animId = requestAnimationFrame(animate);
-    };
-    animate();
-
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: "absolute",
-        inset: 0,
-        pointerEvents: "none",
-        opacity: 0.7,
-      }}
-    />
-  );
-}
-
 export default function Hero() {
   const typedText = useTypewriter(roles);
   const scrollToProjects = () => document.querySelector("#projects")?.scrollIntoView({ behavior: "smooth" });
   const scrollToContact = () => document.querySelector("#contact")?.scrollIntoView({ behavior: "smooth" });
+
+  // Scroll-linked parallax: copy drifts down and fades, the giant title rises and swells.
+  const { scrollY } = useScroll();
+  const contentY = useTransform(scrollY, [0, 600], [0, 140]);
+  const contentOpacity = useTransform(scrollY, [0, 500], [1, 0.1]);
+  const titleY = useTransform(scrollY, [0, 900], [0, -220]);
+  const titleScale = useTransform(scrollY, [0, 900], [1, 1.4]);
+  const titleOpacity = useTransform(scrollY, [0, 700], [1, 0]);
 
   return (
     <section
@@ -141,22 +63,37 @@ export default function Hero() {
         display: "flex",
         alignItems: "center",
         overflow: "hidden",
-        background: "var(--bg-primary)",
       }}
     >
-      {/* Particle background */}
-      <ParticleCanvas />
-
-      {/* Animated blobs */}
-      <div className="blob blob-1" style={{ top: "-10%", left: "-10%" }} />
-      <div className="blob blob-2" style={{ top: "40%", right: "-10%" }} />
-      <div className="blob blob-3" style={{ bottom: "10%", left: "30%" }} />
-
-      {/* Spotlight overlay */}
-      <div className="spotlight" id="spotlight-overlay" />
+      {/* Giant title behind the copy, like a chapter plate */}
+      <motion.div
+        aria-hidden
+        initial={{ opacity: 0, letterSpacing: "0.5em" }}
+        animate={{ opacity: 1, letterSpacing: "0.12em" }}
+        transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: "4%",
+          textAlign: "center",
+          fontSize: "clamp(5rem, 25vw, 24rem)",
+          fontWeight: 900,
+          lineHeight: 0.9,
+          color: "transparent",
+          WebkitTextStroke: "1.5px rgba(34,211,238,0.35)",
+          userSelect: "none",
+          pointerEvents: "none",
+          y: titleY,
+          scale: titleScale,
+          opacity: titleOpacity,
+        }}
+      >
+        SPIDY
+      </motion.div>
 
       <div className="container-custom relative z-10 py-32">
-        <div className="max-w-4xl mx-auto text-center">
+        <motion.div className="max-w-4xl mx-auto text-center" style={{ y: contentY, opacity: contentOpacity }}>
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -320,7 +257,7 @@ export default function Hero() {
               </div>
             ))}
           </motion.div>
-        </div>
+        </motion.div>
 
         {/* Scroll indicator */}
         <motion.div

@@ -75,7 +75,7 @@ export default function GitHub() {
   }, []);
 
   return (
-    <section id="github" style={{ background: "var(--bg-secondary)", padding: "6rem 0" }}>
+    <section id="github" style={{ background: "var(--section-scrim)", padding: "6rem 0" }}>
       <div className="container-custom">
         <motion.div
           ref={ref}

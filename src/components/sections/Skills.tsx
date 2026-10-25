@@ -25,7 +25,7 @@ export default function Skills() {
   const active = skillCategories[activeCategory];
 
   return (
-    <section id="skills" style={{ background: "var(--bg-primary)", padding: "6rem 0" }}>
+    <section id="skills" style={{ background: "var(--section-scrim)", padding: "6rem 0" }}>
       <div className="container-custom">
         <motion.div
           ref={ref}

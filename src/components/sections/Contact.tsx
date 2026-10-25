@@ -61,7 +61,7 @@ export default function Contact() {
   };
 
   return (
-    <section id="contact" style={{ background: "var(--bg-primary)", padding: "6rem 0" }}>
+    <section id="contact" style={{ background: "var(--section-scrim)", padding: "6rem 0" }}>
       <div className="container-custom">
         <motion.div
           ref={ref}

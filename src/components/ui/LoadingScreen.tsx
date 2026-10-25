@@ -1,130 +1,211 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import IntroSphere from "@/components/ui/IntroSphere";
+
+const BOOT_MS = 1900;
+const HOLD_MS = 1100;
+const CHAR_MS = 30;
+
+const LINES = [
+  "Hi, I'm Spidy.",
+  "An autonomous assistant developed by Shiva Dhikshith.",
+  "I'm here to assist you. Let's get started.",
+];
+const FULL = LINES.join("\n");
+
+const STATUS = ["NEURAL CORE ONLINE", "WEB MESH SYNCED", "AGENT READY"];
+
+const ringBase = { position: "absolute", inset: 0, width: "100%", height: "100%" } as const;
+
+function Rings() {
+  return (
+    <div style={{ position: "absolute", inset: 0 }} aria-hidden>
+      <svg viewBox="0 0 560 560" style={{ ...ringBase, animation: "spin-slow 60s linear infinite" }}>
+        <circle cx="280" cy="280" r="270" fill="none" stroke="rgba(34,211,238,0.85)" strokeWidth="9" strokeDasharray="1.5 15.3" />
+      </svg>
+      <svg viewBox="0 0 560 560" style={{ ...ringBase, animation: "spin-slow 40s linear infinite reverse" }}>
+        <circle cx="280" cy="280" r="244" fill="none" stroke="rgba(34,211,238,0.6)" strokeWidth="3" strokeDasharray="1 7" />
+        <circle cx="280" cy="280" r="258" fill="none" stroke="rgba(34,211,238,0.4)" strokeWidth="1" strokeDasharray="2 10" />
+      </svg>
+      <svg viewBox="0 0 560 560" style={{ ...ringBase, animation: "spin-slow 24s linear infinite" }}>
+        <circle cx="280" cy="280" r="214" fill="none" stroke="rgba(34,211,238,0.95)" strokeWidth="2" strokeDasharray="38 56 12 70 24 88" />
+      </svg>
+      <svg viewBox="0 0 560 560" style={{ ...ringBase, animation: "spin-slow 32s linear infinite reverse" }}>
+        <circle cx="280" cy="280" r="196" fill="none" stroke="rgba(239,35,60,0.45)" strokeWidth="1.5" strokeDasharray="60 120 20 150" />
+      </svg>
+    </div>
+  );
+}
 
 export default function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true);
-  const [progress, setProgress] = useState(0);
+  const [chars, setChars] = useState(0);
+  const [statusShown, setStatusShown] = useState(0);
+  const [reduce] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 
+  // Tell the assistant it can take over once the intro is gone.
   useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => setIsLoading(false), 300);
-          return 100;
-        }
-        return prev + Math.random() * 15;
-      });
-    }, 80);
-    return () => clearInterval(interval);
-  }, []);
+    if (isLoading) return;
+    document.documentElement.dataset.spidyReady = "1";
+    window.dispatchEvent(new Event("spidy:ready"));
+  }, [isLoading]);
+
+  // Hold the page still while the intro plays.
+  useEffect(() => {
+    if (!isLoading) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isLoading]);
+
+  // Boot, type the greeting, hold, then reveal the site.
+  useEffect(() => {
+    const boot = reduce ? 300 : BOOT_MS;
+    let typer: ReturnType<typeof setInterval> | undefined;
+    let exit: ReturnType<typeof setTimeout> | undefined;
+
+    const startTyping = setTimeout(() => {
+      typer = setInterval(() => {
+        setChars((c) => {
+          if (c >= FULL.length) {
+            clearInterval(typer);
+            exit = setTimeout(() => setIsLoading(false), reduce ? 400 : HOLD_MS);
+            return c;
+          }
+          return c + 1;
+        });
+      }, reduce ? 4 : CHAR_MS);
+    }, boot);
+
+    const status = [0, 1, 2].map((i) => setTimeout(() => setStatusShown(i + 1), 500 + i * 450));
+
+    return () => {
+      clearTimeout(startTyping);
+      status.forEach(clearTimeout);
+      if (typer) clearInterval(typer);
+      if (exit) clearTimeout(exit);
+    };
+  }, [reduce]);
+
+  const typed = FULL.slice(0, chars).split("\n");
+  const today = new Date()
+    .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+    .toUpperCase();
 
   return (
     <AnimatePresence>
       {isLoading && (
         <motion.div
           className="loading-screen"
-          exit={{ opacity: 0, scale: 1.05 }}
-          transition={{ duration: 0.6, ease: [0.76, 0, 0.24, 1] as [number, number, number, number] }}
-          style={{ background: "var(--bg-primary)", zIndex: 9999 }}
+          role="dialog"
+          aria-label="Spidy welcome"
+          exit={{ opacity: 0, scale: 1.12, filter: "blur(10px)" }}
+          transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
+          style={{ background: "#02040a", zIndex: 9999, flexDirection: "column", overflow: "hidden" }}
         >
-          <div className="flex flex-col items-center gap-8">
-            {/* Logo */}
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number] }}
-              className="relative"
-            >
-              <div
-                style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 20,
-                  background: "linear-gradient(135deg, var(--accent-blue), var(--accent-purple))",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 0 40px rgba(59,130,246,0.5)",
-                  fontSize: 28,
-                  fontWeight: 900,
-                  color: "white",
-                  letterSpacing: "-1px",
-                  fontFamily: "var(--font-inter)",
-                }}
-              >
-                SDK
-              </div>
-              {/* Spinning ring */}
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                style={{
-                  position: "absolute",
-                  inset: -4,
-                  borderRadius: 24,
-                  border: "2px solid transparent",
-                  borderTopColor: "var(--accent-cyan)",
-                  borderRightColor: "var(--accent-purple)",
-                }}
-              />
-            </motion.div>
+          <div className="intro-grid" aria-hidden />
 
-            {/* Name */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-              className="text-center"
-            >
-              <p
-                style={{
-                  color: "var(--text-primary)",
-                  fontSize: "1.1rem",
-                  fontWeight: 600,
-                  letterSpacing: "0.1em",
-                }}
-              >
-                SHIVA DHIKSHITH KOPPU
-              </p>
-              <p style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginTop: 4, letterSpacing: "0.05em" }}>
-                Loading portfolio...
-              </p>
-            </motion.div>
-
-            {/* Progress bar */}
-            <motion.div
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 240 }}
-              transition={{ delay: 0.6, duration: 0.4 }}
-              style={{
-                height: 3,
-                background: "var(--bg-tertiary)",
-                borderRadius: 9999,
-                overflow: "hidden",
-              }}
-            >
-              <motion.div
-                style={{
-                  height: "100%",
-                  width: `${Math.min(progress, 100)}%`,
-                  background: "linear-gradient(90deg, var(--accent-blue), var(--accent-purple), var(--accent-cyan))",
-                  borderRadius: 9999,
-                  transition: "width 0.1s ease",
-                }}
-              />
-            </motion.div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}
-            >
-              {Math.round(Math.min(progress, 100))}%
-            </motion.p>
+          <div
+            suppressHydrationWarning
+            style={{
+              position: "absolute",
+              top: "1.1rem",
+              left: 0,
+              right: 0,
+              textAlign: "center",
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              letterSpacing: "0.22em",
+              color: "rgba(34,211,238,0.75)",
+            }}
+          >
+            {today}
           </div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+            style={{ position: "relative", width: "min(560px, 88vw, 58vh)", aspectRatio: "1", display: "grid", placeItems: "center" }}
+          >
+            <Rings />
+            <div>
+              <IntroSphere size={400} />
+            </div>
+          </motion.div>
+
+          <div
+            aria-live="polite"
+            style={{ marginTop: "-1.5rem", textAlign: "center", minHeight: "6.5rem", padding: "0 1.25rem", maxWidth: 640 }}
+          >
+            {chars === 0 ? (
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.2em", color: "rgba(34,211,238,0.8)" }}>
+                INITIALIZING SPIDY…
+              </p>
+            ) : (
+              typed.map((line, i) => (
+                <p
+                  key={i}
+                  style={
+                    i === 0
+                      ? {
+                          fontSize: "clamp(1.6rem, 5vw, 2.4rem)",
+                          fontWeight: 800,
+                          background: "linear-gradient(90deg, #22d3ee, #ffffff 60%, #ef233c)",
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
+                          minHeight: "1.3em",
+                        }
+                      : {
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "clamp(0.78rem, 2.2vw, 0.95rem)",
+                          color: "rgba(226,240,255,0.85)",
+                          lineHeight: 1.7,
+                        }
+                  }
+                >
+                  {line}
+                  {i === typed.length - 1 && chars < FULL.length && <span className="spidy-caret" />}
+                </p>
+              ))
+            )}
+          </div>
+
+          <div
+            style={{
+              position: "absolute",
+              bottom: "1.3rem",
+              left: 0,
+              right: 0,
+              display: "flex",
+              justifyContent: "center",
+              gap: "1.5rem",
+              flexWrap: "wrap",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              letterSpacing: "0.18em",
+              color: "rgba(34,211,238,0.7)",
+            }}
+          >
+            {STATUS.slice(0, statusShown).map((s) => (
+              <motion.span key={s} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+                ● {s}
+              </motion.span>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setIsLoading(false)}
+            className="spidy-btn"
+            style={{ position: "absolute", top: "0.9rem", right: "1rem" }}
+          >
+            SKIP
+          </button>
         </motion.div>
       )}
     </AnimatePresence>

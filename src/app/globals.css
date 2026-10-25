@@ -4,7 +4,7 @@
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
   --color-accent-blue: #3b82f6;
-  --color-accent-purple: #8b5cf6;
+  --color-accent-purple: #ef233c;
   --color-accent-cyan: #06b6d4;
   --color-accent-pink: #ec4899;
   --animate-gradient-x: gradient-x 8s ease infinite;
@@ -23,7 +23,8 @@
 ────────────────────────────────────────────────────────────── */
 :root {
   /* Dark theme defaults */
-  --bg-primary: #030712;
+  --bg-primary: #02040a;
+  --section-scrim: rgba(2, 4, 10, 0.5);
   --bg-secondary: #0f172a;
   --bg-tertiary: #1e293b;
   --glass-bg: rgba(15, 23, 42, 0.6);
@@ -33,8 +34,8 @@
   --text-secondary: #94a3b8;
   --text-muted: #475569;
   --accent-blue: #3b82f6;
-  --accent-purple: #8b5cf6;
-  --accent-cyan: #06b6d4;
+  --accent-purple: #ef233c;
+  --accent-cyan: #22d3ee;
   --accent-pink: #ec4899;
   --glow-blue: 0 0 20px rgba(59, 130, 246, 0.3);
   --glow-purple: 0 0 20px rgba(139, 92, 246, 0.3);
@@ -46,6 +47,7 @@
 
 .light {
   --bg-primary: #ffffff;
+  --section-scrim: rgba(255, 255, 255, 0.55);
   --bg-secondary: #f8fafc;
   --bg-tertiary: #f1f5f9;
   --glass-bg: rgba(255, 255, 255, 0.7);
@@ -436,4 +438,124 @@ body {
   outline: 2px solid var(--accent-blue);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SPIDY — HUD, CHAPTERS, ASSISTANT
+────────────────────────────────────────────────────────────── */
+.site-main,
+footer {
+  position: relative;
+  z-index: 1;
+}
+
+.hud-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 0, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 4px),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+.light .hud-overlay {
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(15, 23, 42, 0.12) 100%);
+}
+
+.chapter-label {
+  position: absolute;
+  top: 2.5rem;
+  left: 1.5rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--accent-cyan);
+  opacity: 0.8;
+  pointer-events: none;
+}
+.chapter-label span:nth-child(2) {
+  color: var(--accent-purple);
+}
+@media (min-width: 640px) {
+  .chapter-label { left: 2rem; }
+}
+@media (min-width: 1024px) {
+  .chapter-label { left: 3rem; }
+}
+
+.spidy-leg {
+  transform-box: view-box;
+  transform-origin: 32px 34px;
+  animation: spidy-leg 1.4s ease-in-out infinite;
+}
+@keyframes spidy-leg {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+
+.spidy-caret {
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--accent-cyan);
+  animation: spidy-blink 1s steps(2) infinite;
+}
+@keyframes spidy-blink {
+  50% { opacity: 0; }
+}
+
+.spidy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 30px;
+  padding: 0 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  background: rgba(34, 211, 238, 0.06);
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  transition: var(--transition);
+}
+.spidy-btn:hover:not(:disabled) {
+  background: rgba(34, 211, 238, 0.18);
+  border-color: var(--accent-cyan);
+}
+.spidy-btn:disabled {
+  opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spidy-leg, .spidy-caret { animation: none; }
+  html { scroll-behavior: auto; }
+}
+
+.spidy-chip {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(239, 35, 60, 0.4);
+  background: rgba(239, 35, 60, 0.08);
+  color: var(--text-secondary);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.intro-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
 }

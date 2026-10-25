@@ -45,7 +45,7 @@ export default function About() {
   const [ref, inView] = useInView({ threshold: 0.1, triggerOnce: true });
 
   return (
-    <section id="about" style={{ background: "var(--bg-secondary)", padding: "6rem 0" }}>
+    <section id="about" style={{ background: "var(--section-scrim)", padding: "6rem 0" }}>
       <div className="container-custom">
         <motion.div
           ref={ref}

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import AnimatedCursor from "@/components/ui/AnimatedCursor";
@@ -18,6 +19,12 @@ import GitHub from "@/components/sections/GitHub";
 import Contact from "@/components/sections/Contact";
 import Testimonials from "@/components/sections/Testimonials";
 import Blog from "@/components/sections/Blog";
+import Chapter from "@/components/ui/Chapter";
+import DepthScroll from "@/components/ui/DepthScroll";
+
+// Both read window/scroll geometry on mount, so they only render on the client.
+const SpidyBackdrop = dynamic(() => import("@/components/ui/SpidyBackdrop"), { ssr: false });
+const SpidyAssistant = dynamic(() => import("@/components/ui/SpidyAssistant"), { ssr: false });
 
 function MouseSpotlight() {
   useEffect(() => {
@@ -68,24 +75,26 @@ export default function Home() {
   return (
     <ThemeProvider>
       <LoadingScreen />
+      <SpidyBackdrop />
       <AnimatedCursor />
       <ScrollProgress />
       <MouseSpotlight />
       <EasterEgg />
       <FloatingSocialDock />
+      <SpidyAssistant />
+      <DepthScroll />
       <Navbar />
-      <main>
+      <main className="site-main">
         <Hero />
-        <About />
-        <Skills />
-        <Projects />
-        <Resume />
-
-        <Achievements />
-        <GitHub />
-        <Contact />
-        <Testimonials />
-        <Blog />
+        <Chapter number="02" label="About"><About /></Chapter>
+        <Chapter number="03" label="Skills"><Skills /></Chapter>
+        <Chapter number="04" label="Projects"><Projects /></Chapter>
+        <Chapter number="05" label="Resume"><Resume /></Chapter>
+        <Chapter number="06" label="Achievements"><Achievements /></Chapter>
+        <Chapter number="07" label="GitHub"><GitHub /></Chapter>
+        <Chapter number="08" label="Contact"><Contact /></Chapter>
+        <Chapter number="09" label="Testimonials"><Testimonials /></Chapter>
+        <Chapter number="10" label="Blog"><Blog /></Chapter>
       </main>
       <Footer />
     </ThemeProvider>

@@ -7,7 +7,7 @@ export default function Resume() {
   const [ref, inView] = useInView({ threshold: 0.2, triggerOnce: true });
 
   return (
-    <section id="resume" style={{ background: "var(--bg-primary)", padding: "6rem 0" }}>
+    <section id="resume" style={{ background: "var(--section-scrim)", padding: "6rem 0" }}>
       <div className="container-custom">
         <motion.div
           ref={ref}
