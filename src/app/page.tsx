@@ -12,6 +12,7 @@ import MissionsChapter from "@/components/chapters/MissionsChapter";
 import JourneyChapter from "@/components/chapters/JourneyChapter";
 import SignalChapter from "@/components/chapters/SignalChapter";
 import ContactChapter from "@/components/chapters/ContactChapter";
+import EndChapter from "@/components/chapters/EndChapter";
 
 // Both read window/scroll geometry on mount, so they only render on the client.
 const WorldCanvas = dynamic(() => import("@/components/world/WorldCanvas"), { ssr: false });
@@ -36,6 +37,7 @@ export default function Home() {
         <JourneyChapter />
         <SignalChapter />
         <ContactChapter />
+        <EndChapter />
       </main>
       <Footer />
     </>

@@ -176,6 +176,93 @@ function panelGeo(w: number, h: number, rand: () => number) {
   return pointsGeo(seg);
 }
 
+/**
+ * Surface points of a standing humanoid figure (about 58 units tall, feet at y = -30, facing +z),
+ * built from capsules and ellipsoids: head, neck, torso, shoulders, pelvis, arms and legs.
+ * The figure is what the final beacon's dot-sphere morphs into at the very bottom of the page.
+ */
+function humanoidPoints(n: number, rand: () => number) {
+  type Part =
+    | { k: "cap"; a: number[]; b: number[]; ra: number; rb: number; w: number }
+    | { k: "ell"; c: number[]; r: number[]; w: number }
+    | { k: "torso"; w: number };
+
+  const parts: Part[] = [
+    { k: "ell", c: [0, 22.5, 0.4], r: [4.4, 5.6, 4.8], w: 11 },
+    { k: "cap", a: [0, 17.6, 0], b: [0, 15, 0], ra: 1.9, rb: 2.2, w: 2 },
+    { k: "torso", w: 22 },
+    { k: "ell", c: [0, -5.5, 0], r: [6, 3.5, 3.8], w: 5 },
+  ];
+  for (const s of [-1, 1]) {
+    parts.push(
+      { k: "ell", c: [s * 8.4, 14.2, 0], r: [2.6, 2.6, 2.6], w: 4 },
+      { k: "cap", a: [s * 8.6, 13.5, 0], b: [s * 11.8, 2.5, 0.4], ra: 2.3, rb: 1.9, w: 7 },
+      { k: "cap", a: [s * 11.8, 2.5, 0.4], b: [s * 13.6, -8.5, 1.8], ra: 1.8, rb: 1.4, w: 6 },
+      { k: "ell", c: [s * 14, -10.6, 2], r: [1.5, 2.2, 1], w: 2 },
+      { k: "cap", a: [s * 3.4, -8, 0], b: [s * 4.2, -18, 0.4], ra: 3.4, rb: 2.6, w: 8 },
+      { k: "cap", a: [s * 4.2, -18, 0.4], b: [s * 4.4, -27.5, 0], ra: 2.5, rb: 1.8, w: 7 },
+      { k: "ell", c: [s * 4.6, -29.2, 2], r: [1.9, 1.1, 3.4], w: 3 }
+    );
+  }
+
+  const total = parts.reduce((s, p) => s + p.w, 0);
+  const counts = parts.map((p) => Math.floor((n * p.w) / total));
+  counts[2] += n - counts.reduce((s, c) => s + c, 0);
+
+  const out = new Float32Array(n * 3);
+  let o = 0;
+  const put = (x: number, y: number, z: number) => {
+    out[o++] = x + (rand() - 0.5) * 0.25;
+    out[o++] = y + (rand() - 0.5) * 0.25;
+    out[o++] = z + (rand() - 0.5) * 0.25;
+  };
+
+  parts.forEach((p, pi) => {
+    for (let i = 0; i < counts[pi]; i++) {
+      if (p.k === "ell") {
+        const a = rand() * Math.PI * 2;
+        const b = Math.acos(2 * rand() - 1);
+        put(
+          p.c[0] + p.r[0] * Math.sin(b) * Math.cos(a),
+          p.c[1] + p.r[1] * Math.cos(b),
+          p.c[2] + p.r[2] * Math.sin(b) * Math.sin(a)
+        );
+      } else if (p.k === "torso") {
+        const y = -3 + rand() * 18;
+        const t = (y + 3) / 18;
+        const a = rand() * Math.PI * 2;
+        put((5.2 + 2.4 * t) * Math.cos(a), y, (3.6 + 0.6 * t) * Math.sin(a));
+      } else {
+        const t = rand();
+        const d = [p.b[0] - p.a[0], p.b[1] - p.a[1], p.b[2] - p.a[2]];
+        const len = Math.hypot(d[0], d[1], d[2]);
+        const h = Math.abs(d[1]) < 0.9 * len ? [0, 1, 0] : [1, 0, 0];
+        const cross = (u: number[], v: number[]) => [
+          u[1] * v[2] - u[2] * v[1],
+          u[2] * v[0] - u[0] * v[2],
+          u[0] * v[1] - u[1] * v[0],
+        ];
+        const norm = (u: number[]) => {
+          const l = Math.hypot(u[0], u[1], u[2]) || 1;
+          return [u[0] / l, u[1] / l, u[2] / l];
+        };
+        const u = norm(cross(d, h));
+        const v = norm(cross(d, u));
+        const r = p.ra + (p.rb - p.ra) * t;
+        const a = rand() * Math.PI * 2;
+        const ca = Math.cos(a) * r;
+        const sa = Math.sin(a) * r;
+        put(
+          p.a[0] + d[0] * t + u[0] * ca + v[0] * sa,
+          p.a[1] + d[1] * t + u[1] * ca + v[1] * sa,
+          p.a[2] + d[2] * t + u[2] * ca + v[2] * sa
+        );
+      }
+    }
+  });
+  return out;
+}
+
 export default function WorldCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
@@ -385,7 +472,25 @@ export default function WorldCanvas() {
     // ── 6 · Final beacon
     const beacon = new THREE.Group();
     beacon.position.set(0, 5, BEACON_Z);
-    beacon.add(new THREE.Points(pointsGeo(fibSphere(lite ? 1200 : 2000, 30)), pointsMat(0.9, 0.9, matsB)));
+    // The beacon's dot-sphere can morph into a standing humanoid hologram at the very end of the page.
+    const BEACON_N = lite ? 1800 : 3600;
+    const sphereTargets = new Float32Array(fibSphere(BEACON_N, 30));
+    const humanTargets = humanoidPoints(BEACON_N, rand);
+    const morphPos = new Float32Array(sphereTargets);
+    const morphCol = new Float32Array(BEACON_N * 3).fill(1);
+    const morphDelay = Float32Array.from({ length: BEACON_N }, () => rand() * 0.45);
+    const morphGeo = new THREE.BufferGeometry();
+    const morphPosAttr = new THREE.BufferAttribute(morphPos, 3);
+    const morphColAttr = new THREE.BufferAttribute(morphCol, 3);
+    morphPosAttr.setUsage(THREE.DynamicDrawUsage);
+    morphColAttr.setUsage(THREE.DynamicDrawUsage);
+    morphGeo.setAttribute("position", morphPosAttr);
+    morphGeo.setAttribute("color", morphColAttr);
+    const morphMat = pointsMat(0.9, 0.9, matsB);
+    morphMat.vertexColors = true;
+    const morphPts = new THREE.Points(morphGeo, morphMat);
+    morphPts.frustumCulled = false;
+    beacon.add(morphPts);
     const beaconGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.7 }));
     matsB.push(beaconGlow.material);
     beaconGlow.scale.set(150, 150, 1);
@@ -403,6 +508,24 @@ export default function WorldCanvas() {
       beacon.add(p);
       return p;
     });
+    // Extras that only show once the figure has formed: a chest core, eyes, a scan ring and a chest ring.
+    const heart = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+    matsA.push(heart.material);
+    heart.position.set(0, 10.5, 4);
+    heart.scale.set(11, 11, 1);
+    heart.visible = false;
+    beacon.add(heart);
+    const chestRing = new THREE.LineLoop(pointsGeo(circlePoints(48, 2.6)), lineMat(0, matsA));
+    chestRing.position.set(0, 10.5, 4.4);
+    chestRing.visible = false;
+    beacon.add(chestRing);
+    const eyes = new THREE.Points(pointsGeo([-1.9, 23.2, 4.9, 1.9, 23.2, 4.9]), pointsMat(1.7, 0, matsA));
+    eyes.visible = false;
+    beacon.add(eyes);
+    const scanRing = new THREE.LineLoop(pointsGeo(circlePoints(96, 14)), lineMat(0, matsA));
+    scanRing.rotation.x = Math.PI / 2;
+    scanRing.visible = false;
+    beacon.add(scanRing);
     scene.add(beacon);
 
     // Shockwave rings fired when a new chapter is reached
@@ -465,6 +588,18 @@ export default function WorldCanvas() {
     let raf = 0;
     let last = performance.now();
     let elapsed = 0;
+    // 0 while the scene rolls on as usual, 1 once the visitor has reached the end of the page.
+    let endSmooth = 0;
+    let lastMorph = -1;
+    let spin = 0;
+    let tinted = false;
+    const END_CAM = new THREE.Vector3(0, 6, -606);
+    const END_LOOK = new THREE.Vector3(0, -2, BEACON_Z);
+    const END_FOV = 50;
+    // On a tall, narrow phone screen the figure is framed smaller so its head clears the menu bar and its feet clear the caption.
+    const END_LOOK_PORTRAIT = new THREE.Vector3(0, -8, BEACON_Z);
+    const END_FOV_PORTRAIT = 64;
+    const lerp = THREE.MathUtils.lerp;
 
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
@@ -472,7 +607,8 @@ export default function WorldCanvas() {
         last = now;
         return;
       }
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const realDt = Math.min(1, (now - last) / 1000);
+      const dt = Math.min(0.05, realDt);
       last = now;
       elapsed += dt;
 
@@ -483,13 +619,26 @@ export default function WorldCanvas() {
       const boost = reduce ? 0 : Math.min(Math.abs(vel) * 0.9, 3.2);
       const sgn = vel >= 0 ? 1 : -1;
 
+      // How far into the closing screen the visitor is. Scrolling back up reverses it.
+      const endEl = document.getElementById("end");
+      const vh = window.innerHeight;
+      const endRaw = endEl ? THREE.MathUtils.clamp((vh - endEl.getBoundingClientRect().top) / (vh * 0.9), 0, 1) : 0;
+      endSmooth += (endRaw - endSmooth) * (1 - Math.exp(-5 * realDt));
+      const e = endSmooth * endSmooth * (3 - 2 * endSmooth);
+
       const t = smooth / (CAM.length - 1);
       posCurve.getPoint(t, pos);
       lookCurve.getPoint(t, look);
       const i0 = Math.min(CAM.length - 2, Math.floor(smooth));
       const f = smooth - i0;
-      camera.fov = CAM[i0].f + (CAM[i0 + 1].f - CAM[i0].f) * f;
+      const portrait = camera.aspect < 0.8;
+      camera.fov = lerp(CAM[i0].f + (CAM[i0 + 1].f - CAM[i0].f) * f, portrait ? END_FOV_PORTRAIT : END_FOV, e);
       camera.updateProjectionMatrix();
+      // At the end the camera steps back so the whole figure fits in view.
+      if (e > 0) {
+        pos.lerp(END_CAM, e);
+        look.lerp(portrait ? END_LOOK_PORTRAIT : END_LOOK, e);
+      }
 
       if (!reduce) {
         camX += (mouse.x * 4 - camX) * (1 - Math.exp(-3 * dt));
@@ -498,7 +647,7 @@ export default function WorldCanvas() {
       camera.position.set(pos.x + camX, pos.y + camY + (reduce ? 0 : Math.sin(elapsed * 0.6) * 0.3), pos.z);
       camera.lookAt(look);
       // The view rolls with where you are on the page and banks into fast scrolls.
-      if (!reduce) camera.rotateZ(Math.sin(smooth * 1.15) * 0.17 + THREE.MathUtils.clamp(-vel * 0.06, -0.16, 0.16));
+      if (!reduce) camera.rotateZ((Math.sin(smooth * 1.15) * 0.17 + THREE.MathUtils.clamp(-vel * 0.06, -0.16, 0.16)) * (1 - e));
 
       // Chapter grading
       const c0 = Math.min(SECTIONS.length - 1, Math.floor(smooth));
@@ -544,7 +693,7 @@ export default function WorldCanvas() {
         rings.forEach((r) => (r.rotation.z += dt * (r.userData.speed + sgn * boost * 0.5 * Math.sign(r.userData.speed))));
         sweep.rotation.z -= dt * (1.1 + boost * 1.4);
         beaconRings.forEach((r) => (r.rotation.z += dt * (r.userData.speed + sgn * boost * 0.4)));
-        beacon.rotation.y += dt * (0.05 + boost * 0.15);
+        spin += dt * (0.05 + boost * 0.15);
         helix.rotation.z = elapsed * 0.12 + smooth * 1.6;
         gates.forEach((g, i) => {
           g.rotation.z += dt * g.userData.dir * (0.25 + boost * 0.9);
@@ -556,12 +705,6 @@ export default function WorldCanvas() {
           (g.material as THREE.LineBasicMaterial).opacity = 0.55 + 0.25 * Math.sin(elapsed * 2.2 + ph);
         });
         net.rotation.y += dt * (0.02 + boost * 0.05);
-        pulses.forEach((p, i) => {
-          const ph = (elapsed * 0.35 + i / 3) % 1;
-          p.scale.setScalar(30 + ph * 70);
-          (p.material as THREE.LineBasicMaterial).opacity = (1 - ph) * 0.55;
-        });
-
         for (let r = 0; r < ROWS; r++) {
           for (let c = 0; c < COLS; c++) {
             const x = terrainPos[(r * COLS + c) * 3];
@@ -596,6 +739,65 @@ export default function WorldCanvas() {
         dustAttr.setXYZ(i, cam.x + wx, cam.y - BOX.y / 2 + y, cam.z + wz);
       }
       dustAttr.needsUpdate = true;
+
+      // The beacon: a rolling dot-sphere until the end of the page, then a standing humanoid hologram.
+      beacon.rotation.y = spin * (1 - e) + (reduce ? 0 : Math.sin(elapsed * 0.5) * 0.14 * e);
+      if (Math.abs(e - lastMorph) > 0.0004) {
+        lastMorph = e;
+        for (let i = 0; i < BEACON_N; i++) {
+          const k0 = Math.min(1, Math.max(0, (e - morphDelay[i]) / 0.55));
+          const k = k0 * k0 * (3 - 2 * k0);
+          const i3 = i * 3;
+          morphPos[i3] = sphereTargets[i3] + (humanTargets[i3] - sphereTargets[i3]) * k;
+          morphPos[i3 + 1] = sphereTargets[i3 + 1] + (humanTargets[i3 + 1] - sphereTargets[i3 + 1]) * k;
+          morphPos[i3 + 2] = sphereTargets[i3 + 2] + (humanTargets[i3 + 2] - sphereTargets[i3 + 2]) * k;
+        }
+        morphPosAttr.needsUpdate = true;
+        morphMat.size = lerp(0.9, 0.75, e);
+      }
+
+      const showFigure = e > 0.02;
+      if (showFigure) {
+        // A bright scan band sweeps up and down the figure.
+        const scanY = Math.sin(elapsed * 0.9) * 28;
+        for (let i = 0; i < BEACON_N; i++) {
+          const y = morphPos[i * 3 + 1];
+          const d = y - scanY;
+          const shade = 0.8 + 0.9 * Math.exp(-(d * d) / 9) + 0.12 * Math.sin(y * 1.6 - elapsed * 3);
+          const v = 1 + (shade - 1) * e;
+          morphCol[i * 3] = morphCol[i * 3 + 1] = morphCol[i * 3 + 2] = v;
+        }
+        morphColAttr.needsUpdate = true;
+        tinted = true;
+        scanRing.position.y = scanY;
+        (scanRing.material as THREE.LineBasicMaterial).opacity = e * 0.55;
+        (heart.material as THREE.SpriteMaterial).opacity = e * (0.65 + 0.25 * Math.sin(elapsed * 3));
+        (chestRing.material as THREE.LineBasicMaterial).opacity = e * 0.9;
+        (eyes.material as THREE.PointsMaterial).opacity = e;
+      } else if (tinted) {
+        morphCol.fill(1);
+        morphColAttr.needsUpdate = true;
+        tinted = false;
+      }
+      heart.visible = chestRing.visible = scanRing.visible = showFigure;
+      eyes.visible = e > 0.5;
+
+      // Rings and ripples settle flat under the figure's feet; the glow becomes an aura behind it.
+      beaconRings.forEach((r, i) => {
+        r.rotation.x = lerp(1.1 + i * 0.5, Math.PI / 2, e);
+        r.rotation.y = lerp(i * 0.7, 0, e);
+        r.position.y = lerp(0, -31, e);
+        r.scale.setScalar(lerp(1, 0.52, e));
+      });
+      pulses.forEach((p, i) => {
+        const ph = (elapsed * 0.35 + i / 3) % 1;
+        p.position.y = lerp(0, -31, e);
+        p.rotation.x = lerp(0, Math.PI / 2, e);
+        p.scale.setScalar(lerp(30 + ph * 70, 6 + ph * 34, e));
+        (p.material as THREE.LineBasicMaterial).opacity = (1 - ph) * 0.55;
+      });
+      beaconGlow.scale.setScalar(lerp(150, 90, e));
+      beaconGlow.material.opacity = lerp(0.7, 0.4, e);
 
       renderer.render(scene, camera);
     };
